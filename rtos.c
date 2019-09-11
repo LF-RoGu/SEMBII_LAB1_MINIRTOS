@@ -96,6 +96,10 @@ void rtos_start_scheduler(void)
 {
 #ifdef RTOS_ENABLE_IS_ALIVE
 	init_is_alive();
+	/*Init sys_tick*/
+	task_list.global_tick = 0;
+	/*Create a task for the processor*/
+	rtos_create_task(/*task body*/,/*priority*/,kAutoStart);
 #endif
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
 	        | SysTick_CTRL_ENABLE_Msk;
