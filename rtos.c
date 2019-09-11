@@ -129,7 +129,7 @@ void rtos_delay(rtos_tick_t ticks)
 {
 	/*Send actual Task into WAITING state*/
 	task_list.tasks[task_list.current_task].state = S_WAITING;
-	/*Assing TICKS to current task*/
+	/*Assign TICKS to current task*/
 	task_list.tasks[task_list.current_task].local_tick = ticks;
 	/*Call DISPACHER*/
 	dispatcher(/*Something*/);
@@ -137,12 +137,18 @@ void rtos_delay(rtos_tick_t ticks)
 
 void rtos_suspend_task(void)
 {
-
+	/*Send actual TASK to SUSPENDED state*/
+	task_list.task[task_list.current_task].state = S_SUSPENDED;
+	/*Call DISPACHER*/
+	dispatcher(/*Something*/);
 }
 
 void rtos_activate_task(rtos_task_handle_t task)
 {
-
+	/*Send actual TASK to RUNNING state*/
+	task_list.task[task_list.current_task].state = S_RUNNING;
+	/*Call DISPACHER*/
+	dispatcher(/*Something*/);
 }
 
 /**********************************************************************************/
@@ -158,7 +164,7 @@ static void reload_systick(void)
 
 static void dispatcher(task_switch_type_e type)
 {
-
+	rtos_task_handle_t next_task = 0;
 }
 
 FORCE_INLINE static void context_switch(task_switch_type_e type)
@@ -192,13 +198,22 @@ void SysTick_Handler(void)
 #ifdef RTOS_ENABLE_IS_ALIVE
 	refresh_is_alive();
 #endif
+	/*Increase g_counter + 1*/
+	task_list.global_tick++;
 	activate_waiting_tasks();
+	/*Call DISPACHER*/
+	dispatcher(/*Something*/);
 	reload_systick();
 }
 
 void PendSV_Handler(void)
 {
+	/*Loads StackPointer of the processor with the one of the actual TASK*/
+	register uint32_t *r0 asm("r0");
 
+	r0 = task_list.tasks[task_list.current_task].sp;
+
+	/*Duda de sp position*/
 }
 
 /**********************************************************************************/
