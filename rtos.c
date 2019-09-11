@@ -99,7 +99,7 @@ void rtos_start_scheduler(void)
 	/*Init sys_tick*/
 	task_list.global_tick = 0;
 	/*Create a task for the processor*/
-	rtos_create_task(/*task body*/,/*priority*/,kAutoStart);
+	rtos_create_task(idle_task,PRIORITY_0,kAutoStart);
 #endif
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
 	        | SysTick_CTRL_ENABLE_Msk;
@@ -111,17 +111,28 @@ void rtos_start_scheduler(void)
 rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 		rtos_autostart_e autostart)
 {
+	rtos_task_handle_t task_handle = 0;
+	if(RTOS_MAX_NUMBER_OF_TASKS > task_list.nTasks)
+	{
 
+	}
+	return task_handle;
 }
 
 rtos_tick_t rtos_get_clock(void)
 {
-	return 0;
+	/*return uint16_t system clk value*/
+	return (SysTick->VAL);
 }
 
 void rtos_delay(rtos_tick_t ticks)
 {
-
+	/*Send actual Task into WAITING state*/
+	task_list.tasks[task_list.current_task].state = S_WAITING;
+	/*Assing TICKS to current task*/
+	task_list.tasks[task_list.current_task].local_tick = ticks;
+	/*Call DISPACHER*/
+	dispatcher(/*Something*/);
 }
 
 void rtos_suspend_task(void)

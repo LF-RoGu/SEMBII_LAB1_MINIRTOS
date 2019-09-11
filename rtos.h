@@ -20,6 +20,21 @@ typedef enum
 	kAutoStart, kStartSuspended
 } rtos_autostart_e;
 
+/*! @brief Autostart state type */
+typedef enum
+{
+	PRIORITY_0,
+	PRIORITY_1,
+	PRIORITY_2,
+	PRIORITY_3,
+	PRIORITY_4,
+	PRIORITY_5,
+	PRIORITY_6,
+	PRIORITY_7,
+	PRIORITY_8,
+	PRIORITY_9
+};
+
 /*! @brief Task handle type, used to identify a task */
 typedef int8_t rtos_task_handle_t;
 
@@ -33,7 +48,7 @@ typedef uint64_t rtos_tick_t;
  * @param none
  * @retval none
  */
-///
+
 void rtos_start_scheduler(void);
 
 /*!
