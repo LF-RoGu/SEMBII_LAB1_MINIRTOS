@@ -33,7 +33,7 @@ typedef enum
 	PRIORITY_7,
 	PRIORITY_8,
 	PRIORITY_9
-};
+}rtos_priority_enum;
 
 /*! @brief Task handle type, used to identify a task */
 typedef int8_t rtos_task_handle_t;

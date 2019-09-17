@@ -29,6 +29,7 @@
 /*Define created for return in case of an invalid task*/
 #define INVALID_TASK 				-1
 
+
 /**********************************************************************************/
 // IS ALIVE definitions
 /**********************************************************************************/
@@ -202,14 +203,38 @@ static void reload_systick(void)
 
 static void dispatcher(task_switch_type_e type)
 {
-	//rtos_task_handle_t next_task = 0;
+	rtos_task_handle_t next_task = INVALID_TASK;
+	uint8_t index = 0;
+	uint8_t high_priority = -1;
+
+	for(index = 0;index < task_list.nTasks ;index++)
+	{
+		if(high_priority < task_list.tasks[index].priority
+				&& (S_READY == task_list.tasks[index].state
+				|| S_RUNNING == task_list.tasks[index].state))
+		{
+			high_priority = task_list.tasks[index].priority;
+			next_task = index;
+			task_list.next_task = next_task;
+		}
+	}
+
+	if(task_list.nTasks != task_list.current_task)
+	{
+		context_switch(type);
+	}
+
 }
 
 FORCE_INLINE static void context_switch(task_switch_type_e type)
 {
 	register uint32_t *sp asm("sp");
 
-	task_list.tasks[task_list.current_task].sp = sp;
+	/*
+	 * Apuntamos al siguiente (o era anterior no recuerdo) sp
+	 * al regresar (o avanzar 9 posiciones en memoria)
+	 */
+	task_list.tasks[task_list.current_task].sp = sp - 9;
 
 	task_list.current_task = task_list.next_task;
 	task_list.tasks[task_list.current_task].state = S_RUNNING;
@@ -217,7 +242,25 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 
 static void activate_waiting_tasks()
 {
+	uint8_t index = 0;
 
+	for(index = 0; index < task_list.nTasks; index++)
+	{
+		/*
+		 * Disminuye el locka_tick en 1
+		 */
+		task_list.tasks[index].local_tick--;
+		/*
+		 *
+		 */
+		if(0 == task_list.tasks[index].local_tick)
+		{
+			/*
+			 * Pone la tarea en estado S_READY
+			 */
+			task_list.tasks[index].state = S_READY;
+		}
+	}
 }
 
 /**********************************************************************************/
@@ -245,7 +288,7 @@ void SysTick_Handler(void)
 	task_list.global_tick++;
 	activate_waiting_tasks();
 	/*Call DISPACHER*/
-	dispatcher(/*Something*/);
+	dispatcher(kFromISR);
 	reload_systick();
 }
 
