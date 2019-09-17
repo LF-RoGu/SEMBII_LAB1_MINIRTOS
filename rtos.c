@@ -1,12 +1,10 @@
-/**
- * @file rtos.c
- * @author ITESO
- * @date Feb 2018
- * @brief Implementation of rtos API
- *
- * This is the implementation of the rtos module for the
- * embedded systems II course at ITESO
- */
+/*
+	\file 	  rtos.c
+	\brief	  Implementation file of the RTOS API
+	\authors: César Villarreal Hernández, ie707560
+	          José Luis Rodríguez Gutiérrez, ie705694
+	\date	  17/09/2019
+*/
 
 #include "rtos.h"
 #include "rtos_config.h"
@@ -29,7 +27,6 @@
 /*Define created for return in case of an invalid task*/
 #define INVALID_TASK 				-1
 
-
 /**********************************************************************************/
 // IS ALIVE definitions
 /**********************************************************************************/
@@ -47,10 +44,6 @@ static void refresh_is_alive(void);
 // Type definitions
 /**********************************************************************************/
 
-typedef enum
-{
-	S_READY = 0, S_RUNNING, S_WAITING, S_SUSPENDED
-} task_state_e;
 typedef enum
 {
 	kFromISR = 0, kFromNormalExec
@@ -104,19 +97,20 @@ void rtos_start_scheduler(void)
 	/*Create a task for the processor*/
 	rtos_create_task(idle_task,PRIORITY_0,kAutoStart);
 #endif
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
-	        | SysTick_CTRL_ENABLE_Msk;
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 	reload_systick();
+
 	for (;;)
-		;
+	{
+
+	}
 }
 
-rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
-		rtos_autostart_e autostart)
+rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority, rtos_autostart_e autostart)
 {
 	/*hecho en clase*/
 	rtos_task_handle_t task_handle_val;
-	if(RTOS_MAX_NUMBER_OF_TASKS - 1 > task_list.nTasks)
+	if((RTOS_MAX_NUMBER_OF_TASKS - 1) > task_list.nTasks)
 	{
 		task_handle_val = INVALID_TASK;
 	}
@@ -196,8 +190,7 @@ void rtos_activate_task(rtos_task_handle_t task)
 
 static void reload_systick(void)
 {
-	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US,
-	        CLOCK_GetCoreSysClkFreq());
+	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US, CLOCK_GetCoreSysClkFreq());
 	SysTick->VAL = 0;
 }
 
@@ -207,7 +200,7 @@ static void dispatcher(task_switch_type_e type)
 	uint8_t index = 0;
 	uint8_t high_priority = -1;
 
-	for(index = 0;index < task_list.nTasks ;index++)
+	for(index = 0; index < task_list.nTasks; index++)
 	{
 		if(high_priority < task_list.tasks[index].priority
 				&& (S_READY == task_list.tasks[index].state
@@ -317,12 +310,10 @@ void PendSV_Handler(void)
 /**********************************************************************************/
 // IS ALIVE SIGNAL IMPLEMENTATION
 /**********************************************************************************/
-
 #ifdef RTOS_ENABLE_IS_ALIVE
 static void init_is_alive(void)
 {
-	gpio_pin_config_t gpio_config =
-	{ kGPIO_DigitalOutput, 1, };
+	gpio_pin_config_t gpio_config = { kGPIO_DigitalOutput, 1, };
 
 	port_pin_config_t port_config =
 	{ kPORT_PullDisable, kPORT_FastSlewRate, kPORT_PassiveFilterDisable,
@@ -337,18 +328,22 @@ static void init_is_alive(void)
 
 static void refresh_is_alive(void)
 {
-	static uint8_t state = 0;
-	static uint32_t count = 0;
-	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US,
-	        CLOCK_GetCoreSysClkFreq());
+	static uint8_t state;
+	static uint32_t count;
+
+	state = 0;
+	count = 0;
+	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US, CLOCK_GetCoreSysClkFreq());
 	SysTick->VAL = 0;
-	if (RTOS_IS_ALIVE_PERIOD_IN_US / RTOS_TIC_PERIOD_IN_US - 1 == count)
+
+	if ((RTOS_IS_ALIVE_PERIOD_IN_US / (RTOS_TIC_PERIOD_IN_US - 1)) == count)
 	{
 		GPIO_PinWrite(alive_GPIO(RTOS_IS_ALIVE_PORT), RTOS_IS_ALIVE_PIN,
 		        state);
 		state = state == 0 ? 1 : 0;
 		count = 0;
-	} else //
+	} 
+	else 
 	{
 		count++;
 	}

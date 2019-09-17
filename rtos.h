@@ -1,12 +1,10 @@
-/**
- * @file rtos.h
- * @author ITESO
- * @date Feb 2018
- * @brief rtos API
- *
- * This is the API definition of the rtos for the
- * embedded systems course at ITESO
- */
+/*
+	\file 	  rtos.h
+	\brief	  Header file of the RTOS API
+	\authors: César Villarreal Hernández, ie707560
+	          José Luis Rodríguez Gutiérrez, ie705694
+	\date	  17/09/2019
+*/
 
 #ifndef SOURCE_RTOS_H_
 #define SOURCE_RTOS_H_
@@ -34,6 +32,14 @@ typedef enum
 	PRIORITY_8,
 	PRIORITY_9
 }rtos_priority_enum;
+
+typedef enum
+{
+	S_READY = 0,
+	S_RUNNING,
+    S_WAITING,
+    S_SUSPENDED
+} task_state_e;
 
 /*! @brief Task handle type, used to identify a task */
 typedef int8_t rtos_task_handle_t;
@@ -96,5 +102,3 @@ rtos_tick_t rtos_get_clock(void);
 void rtos_delay(rtos_tick_t ticks);
 
 #endif /* SOURCE_RTOS_H_ */
-
-///
