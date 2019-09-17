@@ -1,2 +1,3 @@
-# EMB2_Rodriguez_Villarreal_Lab1
-Laboratorio_01
+# Laboratory #1: RTOS Scheduler Implementation
+# by César Villarreal and Luis Fernando Rodriguez
+
