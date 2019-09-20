@@ -2,7 +2,7 @@
 	\file 	  rtos.c
 	\brief	  Implementation file of the RTOS API
 	\authors: César Villarreal Hernández, ie707560
-	          José Luis Rodríguez Gutiérrez, ie705694
+	          Luís Fernando Rodríguez Gutiérrez, ie705694
 	\date	  17/09/2019
 */
 
@@ -196,12 +196,17 @@ static void reload_systick(void)
 
 static void dispatcher(task_switch_type_e type)
 {
-	rtos_task_handle_t next_task = INVALID_TASK;
-	uint8_t index = 0;
-	uint8_t high_priority = -1;
+	rtos_task_handle_t next_task;
+	uint8_t index;
+	uint8_t high_priority;
+
+	next_task = INVALID_TASK;
+	high_priority = INVALID_TASK;
+	index = 0;
 
 	for(index = 0; index < task_list.nTasks; index++)
 	{
+		/* Encuentra la tarea con prioridad más alta, y verifica que su estado sea listo o corriendo */
 		if(high_priority < task_list.tasks[index].priority
 				&& (S_READY == task_list.tasks[index].state
 				|| S_RUNNING == task_list.tasks[index].state))
@@ -210,13 +215,23 @@ static void dispatcher(task_switch_type_e type)
 			next_task = index;
 			task_list.next_task = next_task;
 		}
+		else
+		{
+			/* do-nothing */
+		}
+		
 	}
 
+	/* Realiza cambio de contexto, si la siguiente tarea es diferente a la tarea actual */
 	if(task_list.nTasks != task_list.current_task)
 	{
 		context_switch(type);
 	}
-
+	else
+	{
+		/* do-nothing */
+	}
+	
 }
 
 FORCE_INLINE static void context_switch(task_switch_type_e type)
@@ -287,10 +302,13 @@ void SysTick_Handler(void)
 
 void PendSV_Handler(void)
 {
-	/*
+	/* 
+	   Carga el stack pointer del procesador con el stack pointer de la tarea actual.
 	   Cuando ocurre una interrupción/excepción, el compilador ARM guarda una copia
-	   del stack pointer en el registro R7. Al cambiar de contexto, el RTOS debe hacer una 
-	   copia del stack pointer en R0
+	   del stack pointer del procesador en el registro R7. Al cambiar de contexto, 
+	   el RTOS debe hacer una copia del stack pointer en el espacio de memoria que 
+	   corresponde con el stack pointer de la tarea. Para realizar esta operación
+	   se requiere el uso del registro R0.
 	*/
 
 	register uint32_t r0 asm("r0");

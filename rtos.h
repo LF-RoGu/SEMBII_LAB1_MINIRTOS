@@ -2,7 +2,7 @@
 	\file 	  rtos.h
 	\brief	  Header file of the RTOS API
 	\authors: César Villarreal Hernández, ie707560
-	          José Luis Rodríguez Gutiérrez, ie705694
+	          Luís Fernando Rodríguez Gutiérrez, ie705694
 	\date	  17/09/2019
 */
 
