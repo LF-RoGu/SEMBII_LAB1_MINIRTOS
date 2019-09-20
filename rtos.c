@@ -288,23 +288,22 @@ void SysTick_Handler(void)
 void PendSV_Handler(void)
 {
 	/*
-	 * Lo usamos para que el procesador nos ayude con los movimientod del sp
-	 */
-	/*Loads StackPointer of the processor with the one of the actual TASK*/
-	/*r0 funciona como un "puntero" hacia r7 para decidir que es lo que almacenara despues r7*/
-	register uint32_t r0 asm("r0");
+	   Cuando ocurre una interrupción/excepción, el compilador ARM guarda una copia
+	   del stack pointer en el registro R7. Al cambiar de contexto, el RTOS debe hacer una 
+	   copia del stack pointer en R0
+	*/
 
+	register uint32_t r0 asm("r0");
 	(void) r0;
 
-	SCB->ICSR |= SCB_ICSR_PENDSVCLR_Msk;
+	/* Se indica al procesador que ya se atendió la interrupción */
+	SCB->ICSR |= SCB_ICSR_PENDSVCLR_Msk; //remueve el 'pending state' de la excepción PendSV
 
-	/*Se hace necesario un cast ya que r0 es un reg de 32b*/
-	r0 = (int32_t)task_list.tasks[task_list.current_task].sp;
-	/*
-	 * Pasa de r0 a r7 ya que estamos en una excepcion, en donde se almacena en r7
-	 * en lugar de r0
-	 */
-	asm("mov r7,r0");
+	/* Copiamos la dirección del stack pointer de la tarea actual en R0*/
+	r0 = (int32_t) task_list.tasks[task_list.current_task].sp;  //Se hace un cast ya que r0 es un registro de 32-bits.
+
+	/* guardamos el stack pointer actual en memoria */
+	asm("mov r7, r0");
 }
 
 /**********************************************************************************/
