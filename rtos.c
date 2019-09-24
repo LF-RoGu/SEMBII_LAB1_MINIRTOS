@@ -50,15 +50,6 @@ static void refresh_is_alive(void);
 // Type definitions
 /**********************************************************************************/
 
-typedef enum
-{
-	S_READY = 0, S_RUNNING, S_WAITING, S_SUSPENDED
-} task_state_e;
-typedef enum
-{
-	kFromISR = 0, kFromNormalExec
-} task_switch_type_e;
-
 typedef struct
 {
 	uint8_t priority;
@@ -81,6 +72,7 @@ struct
 	rtos_task_handle_t next_task;
 	rtos_tcb_t tasks[RTOS_MAX_NUMBER_OF_TASKS + 1];
 	rtos_tick_t global_tick;
+	boolean_t context_switch_state;
 } task_list =
 { 0 };
 
@@ -256,13 +248,21 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 	 * Apuntamos al siguiente (o era anterior no recuerdo) sp
 	 * al regresar (o avanzar 9 posiciones en memoria)
 	 */
-	task_list.tasks[task_list.current_task].sp = sp - 9;
+
+	if(FALSE == task_list.context_switch_state)
+	{
+		task_list.context_switch_state = TRUE;
+
+	}
+	else
+	{
+		task_list.tasks[task_list.current_task].sp = sp;
+	}
 
 	task_list.current_task = task_list.next_task;
-	/*
-	 *
-	 */
+
 	task_list.tasks[task_list.current_task].state = S_RUNNING;
+
 	/*Llamamos al pendsv por medio del bit para el handler*/
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }

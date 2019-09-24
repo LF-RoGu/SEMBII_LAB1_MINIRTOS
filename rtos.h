@@ -41,6 +41,17 @@ typedef enum
     S_SUSPENDED
 } task_state_e;
 
+typedef enum
+{
+	kFromISR = 0, kFromNormalExec
+} task_switch_type_e;
+
+typedef enum
+{
+	FALSE,
+	TRUE
+} boolean_t;
+
 /*! @brief Task handle type, used to identify a task */
 typedef int8_t rtos_task_handle_t;
 
