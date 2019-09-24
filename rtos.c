@@ -101,8 +101,7 @@ void rtos_start_scheduler(void)
 	/**/
 	task_list.current_task = INVALID_TASK;
 #endif
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
-	        | SysTick_CTRL_ENABLE_Msk;
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 	reload_systick();
 	for (;;)
 	{
@@ -110,56 +109,33 @@ void rtos_start_scheduler(void)
 	};
 }
 
-rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
-		rtos_autostart_e autostart)
+rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority, rtos_autostart_e autostart)
 {
-	/*hecho en clase*/
 	rtos_task_handle_t task_handle_val;
 
-	if(RTOS_MAX_NUMBER_OF_TASKS - 1 < task_list.nTasks)
+	if((RTOS_MAX_NUMBER_OF_TASKS - 1) < task_list.nTasks)
 	{
 		task_handle_val = INVALID_TASK;
 	}
 	else
 	{
-		/*
-		 * Si autostart es igual a kAutoStart entonces
-		 * autostart es S_READY
-		 * sino
-		 * autostart es S_SUSPEND
-		 */
+		/* asigna el estado pasado por referencia a la tarea actual */
 		task_list.tasks[task_list.nTasks].state = autostart == kAutoStart ? S_READY : S_SUSPENDED;
-		/*
-		 * Pasar la prioridad de la tarea
-		 */
+		/* asigna la prioridad  pasado por referencia a la tarea actual*/
 		task_list.tasks[task_list.nTasks].priority = priority;
-		/*
-		 * We pass the pointer to funct of the task
-		 */
+		/*  hacemos una copia de la función a la tarea (overhead)*/
 		task_list.tasks[task_list.nTasks].task_body = task_body;
-		/*
-		 * Initilize ticker counter for the task
-		 */
+		/* inicializamos la cuenta local de ticks */
 		task_list.tasks[task_list.nTasks].local_tick = 0;
-		/*
-		 * Dejamos un espacio (operacion al final de la funcion)  en el stack para el manejo de los registros
-		 */
+		/* Dejamos un espacio (operacion al final de la funcion en el stack para el manejo de los registros */
 		task_list.tasks[task_list.nTasks].sp = &(task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE - 1]) - STACK_FRAME_SIZE;
-		/*
-		 *
-		 */
+		
 		task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE - STACK_LR_OFFSET] = (uint32_t)task_body;
-		/*
-		 *
-		 */
+
 		task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE - STACK_PSR_OFFSET] = STACK_PSR_DEFAULT;
-		/*
-		 * Stores number of index of the task
-		 */
+		/* Stores number of index of the task */
 		task_handle_val = task_list.nTasks;
-		/*
-		 * Increases the index of number of tasks
-		 */
+		/* Increases the index of number of tasks */
 		task_list.nTasks++;
 	}
 	return task_handle_val;
@@ -167,35 +143,35 @@ rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 
 rtos_tick_t rtos_get_clock(void)
 {
-	/*return uint16_t system clk value*/
-	return (SysTick->VAL);
+	return (SysTick->VAL); //regresa el valor actual del conteo del reloj
 }
 
 void rtos_delay(rtos_tick_t ticks)
 {
-	/*Send actual Task into WAITING state*/
+	/* pone la tarea actual en estado de espera */
 	task_list.tasks[task_list.current_task].state = S_WAITING;
-	/*Assign TICKS to current task*/
+	/* asigna el numero de ticks que tiene que esperar la tarea */
 	task_list.tasks[task_list.current_task].local_tick = ticks;
-	/*Call DISPACHER*/
+	/* llama al despachador para continuar la ejecución de tareas*/
 	dispatcher(kFromNormalExec);
 }
 
 void rtos_suspend_task(void)
 {
-	/*Send actual TASK to SUSPENDED state*/
+	/* Pone la tarea actual en estado suspendido*/
 	task_list.tasks[task_list.current_task].state = S_SUSPENDED;
-	/*Call DISPACHER*/
+	/* llama al despachador para continuar la ejecución de tareas*/
 	dispatcher(kFromNormalExec);
 }
 
 void rtos_activate_task(rtos_task_handle_t task)
 {
-	/*Send actual TASK to RUNNING state*/
+	/* pone la tarea actual en estado de listo */
 	task_list.tasks[task_list.current_task].state = S_READY;
-	/*Call DISPACHER*/
+	/* llama al despachador para continuar la ejecución de tareas*/
 	dispatcher(kFromNormalExec);
 }
+
 
 /**********************************************************************************/
 // Local methods implementation
@@ -203,8 +179,7 @@ void rtos_activate_task(rtos_task_handle_t task)
 
 static void reload_systick(void)
 {
-	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US,
-	        CLOCK_GetCoreSysClkFreq());
+	SysTick->LOAD = USEC_TO_COUNT(RTOS_TIC_PERIOD_IN_US, CLOCK_GetCoreSysClkFreq());
 	SysTick->VAL = 0;
 }
 
@@ -214,7 +189,7 @@ static void dispatcher(task_switch_type_e type)
 	uint8_t index = 0;
 	uint8_t high_priority = MAX_PRIORITY;
 
-	for(index = 0;index < task_list.nTasks ;index++)
+	for(index = 0; index < task_list.nTasks ; index++)
 	{
 		if(high_priority < task_list.tasks[index].priority
 				&& (S_READY == task_list.tasks[index].state
@@ -226,24 +201,25 @@ static void dispatcher(task_switch_type_e type)
 		}
 		else
 		{
-			/*Do nothing*/
+			/* Hacer nada */
 		}
 	}
-	/* Realiza cambio de contexto, si la siguiente tarea es diferente a la tarea actual */
-	if(task_list.nTasks != task_list.current_task)
+
+	/* Se realiza cambio de contexto, si la siguiente tarea es diferente a la tarea actual */
+	if(task_list.next_task != task_list.current_task)
 	{
 		context_switch(type);
 	}
 	else
 	{
-		/*Do nothing*/
+		/* Hacer nada */
 	}
 }
 
 FORCE_INLINE static void context_switch(task_switch_type_e type)
 {
 	register uint32_t *sp asm("sp");
-
+	(void) sp;
 	/*
 	 * Apuntamos al siguiente (o era anterior no recuerdo) sp
 	 * al regresar (o avanzar 9 posiciones en memoria)
@@ -260,10 +236,9 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 	}
 
 	task_list.current_task = task_list.next_task;
-
 	task_list.tasks[task_list.current_task].state = S_RUNNING;
 
-	/*Llamamos al pendsv por medio del bit para el handler*/
+	/* Llamamos al pendsv por medio del bit para el handler */
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
@@ -274,26 +249,18 @@ static void activate_waiting_tasks()
 		es para fijar un limite de tiempo a cada tarea en espera.
 	*/
 
-	uint8_t index = 0;
+	uint8_t index;
 
 	for(index = 0; index < task_list.nTasks; index++)
 	{
-		if(S_WAITING == task_list.tasks[index].state)
+		/* disminuye el reloj local de la tarea en uno */
+		task_list.tasks[index].local_tick--;
+	
+		/* verifica si el reloj local de la tarea está en cero */
+		if(LOCALCLK_TIMEOUT == task_list.tasks[index].local_tick)
 		{
-			/*
-			 * Disminuye el locka_tick en 1
-			 */
-			task_list.tasks[index].local_tick--;
-			/*
-			 *
-			 */
-			if(0 == task_list.tasks[index].local_tick)
-			{
-				/*
-				 * Pone la tarea en estado S_READY
-				 */
-				task_list.tasks[index].state = S_READY;
-			}
+			/* pone la tarea en estado de listo (ready state) */
+			task_list.tasks[index].state = S_READY;
 		}
 	}
 }
@@ -368,14 +335,14 @@ static void init_is_alive(void)
 	{ kGPIO_DigitalOutput, 1, };
 
 	port_pin_config_t port_config =
-	{ kPORT_PullDisable, kPORT_FastSlewRate, kPORT_PassiveFilterDisable,
-	        kPORT_OpenDrainDisable, kPORT_LowDriveStrength, kPORT_MuxAsGpio,
-	        kPORT_UnlockRegister, };
+	{ 
+		kPORT_PullDisable, kPORT_FastSlewRate, kPORT_PassiveFilterDisable,
+	    kPORT_OpenDrainDisable, kPORT_LowDriveStrength, kPORT_MuxAsGpio,
+	    kPORT_UnlockRegister
+	};
 	CLOCK_EnableClock(alive_CLOCK(RTOS_IS_ALIVE_PORT));
-	PORT_SetPinConfig(alive_PORT(RTOS_IS_ALIVE_PORT), RTOS_IS_ALIVE_PIN,
-	        &port_config);
-	GPIO_PinInit(alive_GPIO(RTOS_IS_ALIVE_PORT), RTOS_IS_ALIVE_PIN,
-	        &gpio_config);
+	PORT_SetPinConfig(alive_PORT(RTOS_IS_ALIVE_PORT), RTOS_IS_ALIVE_PIN, &port_config);
+	GPIO_PinInit(alive_GPIO(RTOS_IS_ALIVE_PORT), RTOS_IS_ALIVE_PIN, &gpio_config);
 }
 
 static void refresh_is_alive(void)
